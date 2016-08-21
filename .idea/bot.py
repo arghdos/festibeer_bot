@@ -10,6 +10,8 @@ import re
 import shutil
 import os
 
+AnnoucementName = "Lockn' Beer Meetup Annoucement"
+
 useragent = "windows:festibeer:v1.0 (by /u/arghdos)"
 def skipLong():
     LongTests = True
@@ -46,7 +48,7 @@ class relay(object):
     def __call__(self, bot):
         logging.info('Message relay requested.')
         for user in bot.user_list:
-            bot.r.send_message(user, u"Festibeer Annoucement", self.message_text + self.footer)
+            bot.r.send_message(user, AnnoucementName, self.message_text + self.footer)
 
 class scrape(object):
     def __init__(self, thread_id):
@@ -85,14 +87,15 @@ class scrape(object):
 class bot(object):
     def __init__(self, filename='festibeer_list.txt'):
         self.DELAY = 5 * 60  # 5 min
-        self.BACKUP = 6 #hours
+        self.BACKUP = 6 * 60 * 60 #seconds
         self.r = praw.Reddit(user_agent=useragent)
         self.o = OAuth2Util.OAuth2Util(self.r, configfile="oauth.ini")
         self.o.refresh(force=True)
         self.filename = filename
         try:
-            self.user_list = self.load_list(self.filename)
-        except:
+            self.load_list(self.filename)
+        except Exception as e:
+            logging.exception(e)
             self.user_list = []
             self.save_list()
         self.line_splitter = re.compile("(  \n)|\n")
@@ -103,7 +106,7 @@ class bot(object):
     def load_list(self, filename):
         logging.info('Loading file {} as starting list'.format(filename))
         with open(filename, 'r') as file:
-            self.user_list = list(set(self.user_list).intersection([x.strip() for x in file.readlines() if x.strip()]))
+            self.user_list = list(set([x.strip() for x in file.readlines() if x.strip()]))
 
     def remove_user(self, username):
         logging.info('Removing user /u/{}'.format(username))
@@ -151,16 +154,16 @@ class bot(object):
         while True:
             try:
                 #check backup time
-                if (datetime.now() - self.last_backup).hours > self.BACKUP:
+                if (datetime.now() - self.last_backup).seconds > self.BACKUP:
                     self.save_list()
                     self.remove_old()
 
                 actions = self.check_messages()
                 for action in actions:
                     action(self)
-            except e:
+            except Exception as e:
                 logging.exception(e)
-            time.sleep(max(self.DELAY), 30)
+            time.sleep(max(self.DELAY, 30))
 
 class TestBot(unittest.TestCase):
     def __init(self, add_as_mod=True):

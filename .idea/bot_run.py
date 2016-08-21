@@ -8,8 +8,18 @@ def run_bot(filename):
 
 if __name__ == '__main__':
     import logging
-    logging.basicConfig(filename='festibeer.log', level=logging.INFO,
-                        format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p',
-                        stream=sys.stdout)
+
+    logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
+                                     datefmt='%m/%d/%Y %I:%M:%S %p')
+
+    rootLogger = logging.getLogger()
+    rootLogger.setLevel(logging.INFO)
+    fileHandler = logging.FileHandler("festibeer.log")
+    fileHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(fileHandler)
+
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(consoleHandler)
 
     run_bot('lockn2016.txt')
